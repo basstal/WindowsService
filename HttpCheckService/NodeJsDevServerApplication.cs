@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace HttpCheckService
@@ -10,16 +11,20 @@ namespace HttpCheckService
     {
         private readonly ILogger<NodeJsDevServerApplication> _logger;
         // 请根据您的 Node.js 项目修改这些配置
-        private readonly string _targetIp = "192.168.31.182";
-        private readonly int _targetPort = 3000; // Node.js 开发服务器的常用端口
-        private readonly string _projectDirectory = @"C:\Users\xj\Documents\myci"; // 重要：请务必修改为您的 Node.js 项目目录
+        private readonly string _targetIp;
+        private readonly int _targetPort; // Node.js 开发服务器的常用端口
+        private readonly string _projectDirectory; // 重要：请务必修改为您的 Node.js 项目目录
         private Process? _process;
 
         public string Name => "NodeJsDevServer";
 
-        public NodeJsDevServerApplication(ILogger<NodeJsDevServerApplication> logger)
+        public NodeJsDevServerApplication(ILogger<NodeJsDevServerApplication> logger, IConfiguration configuration)
         {
             _logger = logger;
+            var section = configuration.GetSection("NodeJsDevServer");
+            _targetIp = section["TargetIp"] ?? "127.0.0.1";
+            _targetPort = int.TryParse(section["TargetPort"], out var port) ? port : 3000;
+            _projectDirectory = section["ProjectDirectory"] ?? throw new InvalidOperationException("ProjectDirectory is not configured for NodeJsDevServer.");
         }
 
         public async Task<bool> IsRunningAsync()

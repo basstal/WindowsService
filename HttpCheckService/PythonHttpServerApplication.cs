@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace HttpCheckService
@@ -9,17 +10,22 @@ namespace HttpCheckService
     public class PythonHttpServerApplication : IManageableApplication
     {
         private readonly ILogger<PythonHttpServerApplication> _logger;
-        private readonly string _targetIp = "192.168.31.182";
-        private readonly int _targetPort = 9001;
-        private readonly string _pythonServerDirectory = @"C:\Users\xj\Documents\HttpServer";
-        private readonly string _pythonServerScript = @"C:\Users\xj\AppData\Local\Programs\Python\Python313\python.exe";
+        private readonly string _targetIp;
+        private readonly int _targetPort;
+        private readonly string _pythonServerDirectory;
+        private readonly string _pythonServerScript;
         private Process? _pythonProcess;
 
         public string Name => "PythonHttpServer";
 
-        public PythonHttpServerApplication(ILogger<PythonHttpServerApplication> logger)
+        public PythonHttpServerApplication(ILogger<PythonHttpServerApplication> logger, IConfiguration configuration)
         {
             _logger = logger;
+            var section = configuration.GetSection("PythonHttpServer");
+            _targetIp = section["TargetIp"] ?? "127.0.0.1";
+            _targetPort = int.TryParse(section["TargetPort"], out var port) ? port : 9001;
+            _pythonServerDirectory = section["PythonServerDirectory"] ?? throw new InvalidOperationException("PythonServerDirectory is not configured.");
+            _pythonServerScript = section["PythonServerScript"] ?? throw new InvalidOperationException("PythonServerScript is not configured.");
         }
 
         public async Task<bool> IsRunningAsync()
@@ -121,4 +127,4 @@ namespace HttpCheckService
             }
         }
     }
-} 
+}
